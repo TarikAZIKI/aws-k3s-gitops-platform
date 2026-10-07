@@ -1,0 +1,18 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+*.tfvars
+!*.tfvars.example
+backend.hcl
+
+# Ansible
+ansible/inventory.ini
+*.retry
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
