@@ -20,3 +20,15 @@ variable "budget_alert_email" {
   description = "Email address that receives budget alerts."
   type        = string
 }
+
+variable "github_repository" {
+  description = "GitHub repository (owner/name) allowed to run Terraform plans in AWS."
+  type        = string
+  default     = "TarikAZIKI/aws-k3s-gitops-platform"
+}
+
+variable "enable_github_oidc" {
+  description = "Create the GitHub OIDC provider and the read-only plan role (blocked by SCP on new-experience accounts)."
+  type        = bool
+  default     = false
+}
