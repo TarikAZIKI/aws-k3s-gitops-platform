@@ -26,3 +26,9 @@ variable "ssh_public_key_path" {
   type        = string
   default     = "~/.ssh/devops-platform.pub"
 }
+
+variable "ssh_public_key" {
+  description = "SSH public key content. Takes precedence over ssh_public_key_path (used by CI, which has no key file)."
+  type        = string
+  default     = null
+}

@@ -1,0 +1,91 @@
+# Checks every Terraform change: formatting and validation on all stacks,
+# then a read-only plan of the dev environment against the real AWS account.
+name: Terraform
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform.yml"
+
+permissions:
+  contents: read
+
+env:
+  TF_VERSION: 1.16.5
+  AWS_REGION: eu-north-1
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        stack: [terraform/bootstrap, terraform/envs/dev]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Format check
+        run: terraform fmt -check -recursive terraform
+
+      - name: Validate
+        run: |
+          terraform -chdir=${{ matrix.stack }} init -backend=false -input=false
+          terraform -chdir=${{ matrix.stack }} validate
+
+  plan:
+    needs: validate
+    # Runs only once the OIDC role exists (see terraform/bootstrap/github-oidc.tf).
+    if: vars.AWS_PLAN_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required to request the GitHub OIDC token exchanged for AWS credentials.
+      id-token: write
+    env:
+      # Placeholders: the plan only needs syntactically valid values.
+      TF_VAR_admin_cidr: 203.0.113.10/32
+      TF_VAR_ssh_public_key: ${{ vars.SSH_PUBLIC_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      # No AWS keys stored in GitHub: the role is assumed with a short-lived token.
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Init
+        working-directory: terraform/envs/dev
+        run: |
+          cat > backend.hcl <<HCL
+          bucket = "${{ vars.TF_STATE_BUCKET }}"
+          region = "${AWS_REGION}"
+          encrypt = true
+          HCL
+          terraform init -input=false -backend-config=backend.hcl
+
+      # -lock=false: the role is read-only and a plan never writes the state.
+      - name: Plan
+        working-directory: terraform/envs/dev
+        run: |
+          terraform plan -input=false -lock=false -no-color -out=tfplan | tee plan.txt
+          {
+            echo '### Terraform plan (dev)'
+            echo '```'
+            grep -E '^(Plan:|No changes|  # )' plan.txt || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

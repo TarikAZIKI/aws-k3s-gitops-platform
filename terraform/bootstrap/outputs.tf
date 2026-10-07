@@ -12,3 +12,8 @@ output "backend_config" {
     use_lockfile = true
   EOT
 }
+
+output "github_plan_role_arn" {
+  description = "IAM role assumed by the Terraform workflow through OIDC."
+  value       = var.enable_github_oidc ? aws_iam_role.github_plan[0].arn : null
+}
