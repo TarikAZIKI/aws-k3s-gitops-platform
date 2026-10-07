@@ -18,7 +18,7 @@ spec:
         # Updated by the podinfo CI pipeline on every build (see TarikAZIKI/podinfo).
         image:
           repository: ghcr.io/tarikaziki/podinfo
-          tag: sha-ea494f4
+          tag: sha-15cc2a1
         replicaCount: 2
         ingress:
           enabled: true
