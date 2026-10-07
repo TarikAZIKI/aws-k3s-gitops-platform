@@ -4,7 +4,7 @@ locals {
   state_bucket_name = "${var.project_name}-tfstate-${data.aws_caller_identity.current.account_id}"
 }
 
-# --- Bucket du state Terraform -----------------------------------------------
+# --- Terraform state bucket ---------------------------------------------------
 
 resource "aws_s3_bucket" "tfstate" {
   bucket = local.state_bucket_name
@@ -49,7 +49,7 @@ resource "aws_s3_bucket_ownership_controls" "tfstate" {
   }
 }
 
-# Les anciennes versions du state n'ont pas besoin d'être gardées éternellement.
+# Old state versions do not need to be kept forever.
 resource "aws_s3_bucket_lifecycle_configuration" "tfstate" {
   bucket = aws_s3_bucket.tfstate.id
 
@@ -65,7 +65,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate" {
   }
 }
 
-# --- Garde-fou financier -------------------------------------------------------
+# --- Cost guardrail -----------------------------------------------------------
 
 resource "aws_budgets_budget" "monthly" {
   name         = "${var.project_name}-monthly"

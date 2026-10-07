@@ -1,44 +1,59 @@
-# Point d'entrée unique du projet. `make help` liste les commandes.
+# Single entry point for the project. `make help` lists the commands.
 
 SHELL      := /bin/bash
 TF_BOOT    := terraform -chdir=terraform/bootstrap
 TF_DEV     := terraform -chdir=terraform/envs/dev
 SSH_KEY    := $(HOME)/.ssh/devops-platform
 
-# Ton IP publique, recalculée à chaque commande : le security group suit tes changements de réseau.
+# Your public IP, recomputed on every run: the security group follows your network changes.
 MY_IP       = $(shell curl -fsS https://checkip.amazonaws.com)
 export TF_VAR_admin_cidr = $(MY_IP)/32
 
-.PHONY: help keygen bootstrap init fmt validate plan up down ssh
+SSH_OPTS   := -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null
 
-help: ## Affiche cette aide
+.PHONY: help keygen check-aws bootstrap init fmt validate plan up down ssh inventory configure session
+
+help: ## Show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
 
-keygen: ## Crée la clé SSH du projet si elle n'existe pas
+keygen: ## Create the project SSH key if missing
 	@test -f $(SSH_KEY) || ssh-keygen -t ed25519 -f $(SSH_KEY) -N "" -C devops-platform
 
-bootstrap: ## (Une seule fois) Crée le bucket du state et le budget AWS
+check-aws: ## Check that the AWS CLI session is valid
+	@aws sts get-caller-identity --query Arn --output text >/dev/null 2>&1 || { echo "AWS session expired: run  aws login --region eu-north-1"; exit 1; }
+
+bootstrap: ## (Once) Create the state bucket and the AWS budget
 	$(TF_BOOT) init
 	$(TF_BOOT) apply
 	$(TF_BOOT) output -raw backend_config > terraform/envs/dev/backend.hcl
 
-init: ## Initialise l'environnement dev sur le backend S3
+init: ## Initialize the dev environment on the S3 backend
 	$(TF_DEV) init -backend-config=backend.hcl
 
-fmt: ## Formate et vérifie tout le code Terraform
+fmt: ## Format all Terraform code
 	terraform fmt -recursive terraform
 
-validate: fmt ## Valide la configuration dev
+validate: fmt ## Validate the dev configuration
 	$(TF_DEV) validate
 
-plan: keygen ## Affiche ce que `make up` va changer
+plan: check-aws keygen ## Show what `make up` will change
 	$(TF_DEV) plan
 
-up: keygen ## Crée l'infrastructure AWS
+up: check-aws keygen ## Create the AWS infrastructure
 	$(TF_DEV) apply
 
-down: ## Détruit toute l'infrastructure (à faire en fin de session !)
+down: check-aws ## Destroy all the infrastructure (run at the end of every session!)
 	$(TF_DEV) destroy
 
-ssh: ## Se connecte en SSH à l'instance
-	ssh -i $(SSH_KEY) ubuntu@$$($(TF_DEV) output -raw public_ip)
+ssh: ## SSH into the instance
+	ssh $(SSH_OPTS) -i $(SSH_KEY) ubuntu@$$($(TF_DEV) output -raw public_ip)
+
+inventory: ## Generate the Ansible inventory from Terraform outputs
+	@printf '[k3s]\nnode ansible_host=%s\n' "$$($(TF_DEV) output -raw public_ip)" > ansible/inventory.ini
+	@cat ansible/inventory.ini
+
+configure: inventory ## Configure the server and install k3s (Ansible)
+	cd ansible && ansible-galaxy collection install -r requirements.yml
+	cd ansible && ansible-playbook site.yml
+
+session: up configure ## Create then configure the infrastructure (up + configure)

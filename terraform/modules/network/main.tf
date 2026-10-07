@@ -12,8 +12,8 @@ resource "aws_vpc" "this" {
   }
 }
 
-# Le security group par défaut du VPC est vidé de toutes ses règles :
-# rien ne doit pouvoir l'utiliser par inadvertance.
+# Strip every rule from the VPC default security group so that
+# nothing can end up using it by accident.
 resource "aws_default_security_group" "this" {
   vpc_id = aws_vpc.this.id
 
@@ -30,7 +30,7 @@ resource "aws_internet_gateway" "this" {
   }
 }
 
-# Un seul sous-réseau public : pas de NAT Gateway (~35 $/mois) à payer.
+# A single public subnet: no NAT Gateway (~$35/month) to pay for.
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.this.id
   cidr_block              = var.public_subnet_cidr

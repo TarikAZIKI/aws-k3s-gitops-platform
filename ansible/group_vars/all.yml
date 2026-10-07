@@ -1,0 +1,8 @@
+---
+timezone: Europe/Paris
+
+# k3s release channel (stable, latest, or a minor version such as v1.33).
+k3s_channel: stable
+
+# Kubeconfig copied to the local machine to drive the cluster with kubectl.
+k3s_local_kubeconfig: "~/.kube/devops-platform.yaml"

@@ -1,0 +1,19 @@
+---
+# Prepares the EC2 instance created by Terraform and installs k3s on it.
+# Run by `make configure` (the inventory is generated from Terraform outputs).
+
+- name: Wait for the instance to be reachable
+  hosts: k3s
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+- name: Prepare the server and install k3s
+  hosts: k3s
+  become: true
+  roles:
+    - common
+    - hardening
+    - k3s

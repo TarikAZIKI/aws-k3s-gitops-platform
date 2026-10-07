@@ -1,46 +1,46 @@
 variable "name" {
-  description = "Préfixe des noms de ressources."
+  description = "Prefix for resource names."
   type        = string
 }
 
 variable "vpc_id" {
-  description = "VPC dans lequel créer le security group."
+  description = "VPC in which to create the security group."
   type        = string
 }
 
 variable "subnet_id" {
-  description = "Sous-réseau public de l'instance."
+  description = "Public subnet of the instance."
   type        = string
 }
 
 variable "instance_type" {
-  description = "Type d'instance EC2. 4 Go de RAM minimum pour k3s + ArgoCD + monitoring."
+  description = "EC2 instance type. 8 GB of RAM leaves room for k3s, ArgoCD and the monitoring stack."
   type        = string
-  default     = "t3.medium"
+  default     = "m7i-flex.large"
 }
 
 variable "root_volume_size_gb" {
-  description = "Taille du disque système, en Go."
+  description = "Root volume size, in GB."
   type        = number
   default     = 30
 }
 
 variable "admin_cidr" {
-  description = "Seule plage d'adresses autorisée en SSH et sur l'API Kubernetes (ton IP en /32)."
+  description = "Only address range allowed on SSH and the Kubernetes API (your IP as a /32)."
   type        = string
 
   validation {
     condition     = can(cidrhost(var.admin_cidr, 0)) && var.admin_cidr != "0.0.0.0/0"
-    error_message = "admin_cidr doit être un CIDR valide, et pas 0.0.0.0/0."
+    error_message = "admin_cidr must be a valid CIDR, and not 0.0.0.0/0."
   }
 }
 
 variable "ssh_public_key" {
-  description = "Contenu de la clé publique SSH autorisée sur l'instance."
+  description = "Content of the SSH public key allowed on the instance."
   type        = string
 }
 
 variable "ssm_parameter_path" {
-  description = "Préfixe des paramètres SSM que l'instance a le droit de lire (ex. /devops-platform)."
+  description = "Prefix of the SSM parameters the instance may read (e.g. /devops-platform)."
   type        = string
 }

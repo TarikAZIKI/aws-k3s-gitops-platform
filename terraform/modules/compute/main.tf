@@ -2,7 +2,7 @@ data "aws_region" "current" {}
 
 data "aws_caller_identity" "current" {}
 
-# Dernière Ubuntu 24.04 LTS publiée par Canonical.
+# Latest Ubuntu 24.04 LTS published by Canonical.
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"]
@@ -18,11 +18,11 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# --- Réseau ------------------------------------------------------------------
+# --- Network ------------------------------------------------------------------
 
 resource "aws_security_group" "node" {
   name        = "${var.name}-node"
-  description = "Noeud k3s : SSH et API Kubernetes restreints, HTTP/HTTPS publics"
+  description = "k3s node: SSH and Kubernetes API restricted, public HTTP/HTTPS"
   vpc_id      = var.vpc_id
 
   tags = {
@@ -32,7 +32,7 @@ resource "aws_security_group" "node" {
 
 resource "aws_vpc_security_group_ingress_rule" "ssh" {
   security_group_id = aws_security_group.node.id
-  description       = "SSH depuis l'IP de l'administrateur"
+  description       = "SSH from the admin IP"
   cidr_ipv4         = var.admin_cidr
   ip_protocol       = "tcp"
   from_port         = 22
@@ -41,7 +41,7 @@ resource "aws_vpc_security_group_ingress_rule" "ssh" {
 
 resource "aws_vpc_security_group_ingress_rule" "kube_api" {
   security_group_id = aws_security_group.node.id
-  description       = "API Kubernetes depuis l'IP de l'administrateur"
+  description       = "Kubernetes API from the admin IP"
   cidr_ipv4         = var.admin_cidr
   ip_protocol       = "tcp"
   from_port         = 6443
@@ -50,7 +50,7 @@ resource "aws_vpc_security_group_ingress_rule" "kube_api" {
 
 resource "aws_vpc_security_group_ingress_rule" "http" {
   security_group_id = aws_security_group.node.id
-  description       = "HTTP public (ingress Traefik)"
+  description       = "Public HTTP (Traefik ingress)"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 80
@@ -59,7 +59,7 @@ resource "aws_vpc_security_group_ingress_rule" "http" {
 
 resource "aws_vpc_security_group_ingress_rule" "https" {
   security_group_id = aws_security_group.node.id
-  description       = "HTTPS public (ingress Traefik)"
+  description       = "Public HTTPS (Traefik ingress)"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "tcp"
   from_port         = 443
@@ -68,12 +68,12 @@ resource "aws_vpc_security_group_ingress_rule" "https" {
 
 resource "aws_vpc_security_group_egress_rule" "all" {
   security_group_id = aws_security_group.node.id
-  description       = "Sortie libre (paquets, images, API AWS)"
+  description       = "Unrestricted egress (packages, images, AWS APIs)"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
 
-# --- IAM : l'instance ne peut lire que ses propres paramètres SSM -------------
+# --- IAM: the instance can only read its own SSM parameters -------------------
 
 data "aws_iam_policy_document" "assume_ec2" {
   statement {
@@ -130,8 +130,8 @@ resource "aws_instance" "node" {
   iam_instance_profile   = aws_iam_instance_profile.node.name
   key_name               = aws_key_pair.admin.key_name
 
-  # IMDSv2 obligatoire. Hop limit à 2 pour que les pods (ex. External Secrets)
-  # puissent obtenir les identifiants du rôle de l'instance.
+  # IMDSv2 required. Hop limit of 2 so that pods (e.g. External Secrets)
+  # can obtain the instance role credentials.
   metadata_options {
     http_endpoint               = "enabled"
     http_tokens                 = "required"
@@ -150,7 +150,7 @@ resource "aws_instance" "node" {
   }
 
   lifecycle {
-    # Une nouvelle AMI Ubuntu ne doit pas recréer l'instance en cours de session.
+    # A new Ubuntu AMI must not recreate the instance mid-session.
     ignore_changes = [ami]
   }
 }

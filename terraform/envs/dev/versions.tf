@@ -8,8 +8,8 @@ terraform {
     }
   }
 
-  # Configuration partielle : bucket et région viennent de backend.hcl,
-  # généré à partir des outputs du bootstrap (voir `make init`).
+  # Partial configuration: bucket and region come from backend.hcl,
+  # generated from the bootstrap outputs (see `make bootstrap`).
   backend "s3" {
     key = "envs/dev/terraform.tfstate"
   }

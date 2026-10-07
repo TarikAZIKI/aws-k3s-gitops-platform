@@ -8,8 +8,8 @@ terraform {
     }
   }
 
-  # Le state du bootstrap reste en local : c'est lui qui crée le bucket
-  # qui hébergera le state de tous les autres environnements.
+  # The bootstrap state stays local: this stack creates the bucket
+  # that stores the state of every other environment.
 }
 
 provider "aws" {

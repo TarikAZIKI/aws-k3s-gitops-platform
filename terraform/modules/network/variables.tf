@@ -1,16 +1,16 @@
 variable "name" {
-  description = "Préfixe des noms de ressources."
+  description = "Prefix for resource names."
   type        = string
 }
 
 variable "vpc_cidr" {
-  description = "Plage d'adresses du VPC."
+  description = "VPC address range."
   type        = string
   default     = "10.0.0.0/16"
 }
 
 variable "public_subnet_cidr" {
-  description = "Plage d'adresses du sous-réseau public."
+  description = "Public subnet address range."
   type        = string
   default     = "10.0.1.0/24"
 }

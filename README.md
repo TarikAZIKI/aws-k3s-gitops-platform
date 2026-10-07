@@ -47,5 +47,5 @@ make down    # ⚠️ détruit tout en fin de session
 
 ## Coût
 
-~0,056 $/h quand l'instance tourne (t3.medium + IPv4 + 30 Go gp3), 0 $ une fois détruite
+~0,11 $/h quand l'instance tourne (m7i-flex.large + IPv4 + 30 Go gp3), 0 $ une fois détruite
 (hors bucket du state : quelques centimes).

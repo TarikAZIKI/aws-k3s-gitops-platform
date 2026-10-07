@@ -11,6 +11,6 @@ output "ssh_command" {
 }
 
 output "app_base_url" {
-  description = "Domaine wildcard gratuit pointant sur l'instance (sslip.io)."
+  description = "Free wildcard domain pointing to the instance (sslip.io)."
   value       = "${replace(module.compute.public_ip, ".", "-")}.sslip.io"
 }

@@ -1,10 +1,10 @@
 output "state_bucket" {
-  description = "Bucket S3 qui stocke le state Terraform."
+  description = "S3 bucket that stores the Terraform state."
   value       = aws_s3_bucket.tfstate.bucket
 }
 
 output "backend_config" {
-  description = "Contenu du fichier backend.hcl des environnements."
+  description = "Content of the environments' backend.hcl file."
   value       = <<-EOT
     bucket       = "${aws_s3_bucket.tfstate.bucket}"
     region       = "${var.region}"
