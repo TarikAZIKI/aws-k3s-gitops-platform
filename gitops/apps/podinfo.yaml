@@ -19,7 +19,7 @@ spec:
         image:
           repository: ghcr.io/tarikaziki/podinfo
           tag: sha-15cc2a1
-        replicaCount: 0
+        replicaCount: 2
         # Let Prometheus scrape /metrics (ServiceMonitor CRD from kube-prometheus-stack).
         serviceMonitor:
           enabled: true
