@@ -1,0 +1,21 @@
+# Root application ("app of apps"), applied once by Ansible.
+# Argo CD then manages every Application found in gitops/apps/:
+# adding an app to the cluster is just a commit in that folder.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/TarikAZIKI/aws-k3s-gitops-platform.git
+    targetRevision: main
+    path: gitops/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

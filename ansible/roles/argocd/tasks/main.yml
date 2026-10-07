@@ -1,0 +1,43 @@
+---
+# Argo CD is installed through the k3s Helm controller: any manifest dropped in
+# this folder is applied automatically, and a HelmChart resource is installed
+# with Helm. Ansible only has to write the file, which keeps the task idempotent.
+- name: Declare the Argo CD Helm chart
+  ansible.builtin.template:
+    src: argocd-helmchart.yaml.j2
+    dest: /var/lib/rancher/k3s/server/manifests/argocd.yaml
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Wait for the Argo CD Application CRD
+  ansible.builtin.command:
+    cmd: k3s kubectl wait --for=condition=Established crd/applications.argoproj.io --timeout=10s
+  register: argocd_crd
+  until: argocd_crd.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+
+- name: Wait for the Argo CD application controller
+  ansible.builtin.command:
+    cmd: k3s kubectl -n argocd rollout status statefulset/argocd-application-controller --timeout=10s
+  register: argocd_controller
+  until: argocd_controller.rc == 0
+  retries: 30
+  delay: 10
+  changed_when: false
+
+- name: Copy the root application manifest
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../gitops/bootstrap/root.yaml"
+    dest: /usr/local/src/argocd-root-app.yaml
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Apply the root application (app of apps)
+  ansible.builtin.command:
+    cmd: k3s kubectl apply -f /usr/local/src/argocd-root-app.yaml
+  register: root_app
+  changed_when: "'unchanged' not in root_app.stdout"
