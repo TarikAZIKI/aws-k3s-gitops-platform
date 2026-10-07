@@ -50,6 +50,11 @@ spec:
                 cpu: 10m
                 memory: 64Mi
         grafana:
+          # Admin credentials come from SSM through External Secrets (grafana-admin).
+          admin:
+            existingSecret: grafana-admin
+            userKey: admin-user
+            passwordKey: admin-password
           # Dashboards are loaded from ConfigMaps labelled grafana_dashboard=1.
           sidecar:
             dashboards:
@@ -63,14 +68,6 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
-  # The chart generates a random admin password on every render (Helm `lookup`
-  # does not work under Argo CD): keep the one created at first sync.
-  ignoreDifferences:
-    - kind: Secret
-      name: kube-prometheus-stack-grafana
-      namespace: monitoring
-      jsonPointers:
-        - /data/admin-password
   syncPolicy:
     automated:
       prune: true
@@ -79,4 +76,3 @@ spec:
       - CreateNamespace=true
       # The Prometheus Operator CRDs exceed the client-side apply annotation limit.
       - ServerSideApply=true
-      - RespectIgnoreDifferences=true

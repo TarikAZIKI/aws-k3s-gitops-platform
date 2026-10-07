@@ -1,0 +1,11 @@
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: aws-parameter-store
+spec:
+  provider:
+    aws:
+      service: ParameterStore
+      region: eu-north-1
+      # No auth block: the operator uses the EC2 instance role through IMDSv2
+      # (hop limit 2 in Terraform). That role can only read /devops-platform/*.

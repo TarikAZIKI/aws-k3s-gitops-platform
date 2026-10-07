@@ -11,7 +11,7 @@
     # Skip the install when k3s is already present: keeps the task idempotent.
     creates: /usr/local/bin/k3s
   environment:
-    INSTALL_K3S_CHANNEL: "{{ k3s_channel }}"
+    INSTALL_K3S_VERSION: "{{ k3s_version }}"
     # --tls-san: the API certificate must be valid for the public IP,
     # otherwise kubectl refuses to connect from the local machine.
     INSTALL_K3S_EXEC: >-

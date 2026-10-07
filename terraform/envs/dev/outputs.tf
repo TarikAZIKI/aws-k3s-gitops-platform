@@ -14,3 +14,8 @@ output "app_base_url" {
   description = "Free wildcard domain pointing to the instance (sslip.io)."
   value       = "${replace(module.compute.public_ip, ".", "-")}.sslip.io"
 }
+
+output "grafana_password_parameter" {
+  description = "SSM parameter holding the Grafana admin password."
+  value       = aws_ssm_parameter.grafana_admin_password.name
+}

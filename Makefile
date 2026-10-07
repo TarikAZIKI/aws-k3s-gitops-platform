@@ -68,8 +68,8 @@ argocd-password: ## Print the initial Argo CD admin password
 argocd-ui: ## Open the Argo CD UI on https://localhost:8080 (not exposed publicly)
 	$(KUBECTL) -n argocd port-forward svc/argocd-server 8080:443
 
-grafana-password: ## Print the Grafana admin password (user: admin)
-	@$(KUBECTL) -n monitoring get secret kube-prometheus-stack-grafana -o jsonpath='{.data.admin-password}' | base64 -d; echo
+grafana-password: check-aws ## Print the Grafana admin password from SSM (user: admin)
+	@aws ssm get-parameter --region eu-north-1 --with-decryption --name /devops-platform/grafana/admin-password --query Parameter.Value --output text
 
 grafana-ui: ## Open Grafana on http://localhost:3000 (not exposed publicly)
 	$(KUBECTL) -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
