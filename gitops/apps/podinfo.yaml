@@ -20,6 +20,9 @@ spec:
           repository: ghcr.io/tarikaziki/podinfo
           tag: sha-15cc2a1
         replicaCount: 2
+        # Let Prometheus scrape /metrics (ServiceMonitor CRD from kube-prometheus-stack).
+        serviceMonitor:
+          enabled: true
         ingress:
           enabled: true
           className: traefik
@@ -39,3 +42,10 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m

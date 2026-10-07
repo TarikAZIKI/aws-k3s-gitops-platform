@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: podinfo-dashboard
+  namespace: monitoring
+  labels:
+    # Picked up by the Grafana dashboard sidecar.
+    grafana_dashboard: "1"
+data:
+  podinfo.json: |-
+    {
+      "title": "podinfo",
+      "uid": "podinfo",
+      "schemaVersion": 39,
+      "time": { "from": "now-1h", "to": "now" },
+      "refresh": "30s",
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Pods up",
+          "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [{ "expr": "sum(up{namespace=\"podinfo\", service=\"podinfo\"})" }]
+        },
+        {
+          "type": "timeseries",
+          "title": "Requests per second by status",
+          "gridPos": { "h": 6, "w": 18, "x": 6, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "targets": [{
+            "expr": "sum by (status) (rate(http_request_duration_seconds_count{namespace=\"podinfo\"}[2m]))",
+            "legendFormat": "{{status}}"
+          }]
+        },
+        {
+          "type": "timeseries",
+          "title": "Latency p95",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "targets": [{
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{namespace=\"podinfo\"}[5m])))",
+            "legendFormat": "p95"
+          }]
+        },
+        {
+          "type": "timeseries",
+          "title": "Memory per pod",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "bytes" } },
+          "targets": [{
+            "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"podinfo\", container=\"podinfo\"})",
+            "legendFormat": "{{pod}}"
+          }]
+        },
+        {
+          "type": "logs",
+          "title": "Logs",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 14 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [{ "expr": "{namespace=\"podinfo\"}" }]
+        }
+      ]
+    }

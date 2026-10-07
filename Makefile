@@ -12,7 +12,7 @@ export TF_VAR_admin_cidr = $(MY_IP)/32
 SSH_OPTS   := -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null
 KUBECTL    := kubectl --kubeconfig $(HOME)/.kube/devops-platform.yaml
 
-.PHONY: help keygen check-aws bootstrap init fmt validate plan up down ssh inventory configure session app-url argocd-password argocd-ui
+.PHONY: help keygen check-aws bootstrap init fmt validate plan up down ssh inventory configure session app-url argocd-password argocd-ui grafana-password grafana-ui
 
 help: ## Show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -67,3 +67,9 @@ argocd-password: ## Print the initial Argo CD admin password
 
 argocd-ui: ## Open the Argo CD UI on https://localhost:8080 (not exposed publicly)
 	$(KUBECTL) -n argocd port-forward svc/argocd-server 8080:443
+
+grafana-password: ## Print the Grafana admin password (user: admin)
+	@$(KUBECTL) -n monitoring get secret kube-prometheus-stack-grafana -o jsonpath='{.data.admin-password}' | base64 -d; echo
+
+grafana-ui: ## Open Grafana on http://localhost:3000 (not exposed publicly)
+	$(KUBECTL) -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80

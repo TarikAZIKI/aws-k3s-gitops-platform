@@ -1,0 +1,82 @@
+# Metrics, dashboards and alerting: Prometheus Operator, Prometheus,
+# Alertmanager, Grafana, node-exporter and kube-state-metrics.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 92.1.0
+    helm:
+      valuesObject:
+        # k3s runs these components inside a single process and does not expose
+        # their metrics endpoints: scraping them would only raise false alerts.
+        kubeControllerManager:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeProxy:
+          enabled: false
+        kubeEtcd:
+          enabled: false
+        defaultRules:
+          rules:
+            etcd: false
+            kubeControllerManager: false
+            kubeSchedulerAlerting: false
+            kubeSchedulerRecording: false
+            kubeProxy: false
+        prometheus:
+          prometheusSpec:
+            retention: 2d
+            # Pick up ServiceMonitors and rules from every namespace and chart.
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
+            resources:
+              requests:
+                cpu: 100m
+                memory: 512Mi
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              requests:
+                cpu: 10m
+                memory: 64Mi
+        grafana:
+          # Dashboards are loaded from ConfigMaps labelled grafana_dashboard=1.
+          sidecar:
+            dashboards:
+              searchNamespace: ALL
+          additionalDataSources:
+            - name: Loki
+              uid: loki
+              type: loki
+              url: http://loki.monitoring.svc:3100
+              access: proxy
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  # The chart generates a random admin password on every render (Helm `lookup`
+  # does not work under Argo CD): keep the one created at first sync.
+  ignoreDifferences:
+    - kind: Secret
+      name: kube-prometheus-stack-grafana
+      namespace: monitoring
+      jsonPointers:
+        - /data/admin-password
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # The Prometheus Operator CRDs exceed the client-side apply annotation limit.
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true

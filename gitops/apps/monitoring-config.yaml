@@ -1,0 +1,29 @@
+# Plain manifests for the platform's own alerts and dashboards.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-config
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/TarikAZIKI/aws-k3s-gitops-platform.git
+    targetRevision: main
+    path: gitops/manifests/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # PrometheusRule is a CRD installed by kube-prometheus-stack: wait for it.
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
