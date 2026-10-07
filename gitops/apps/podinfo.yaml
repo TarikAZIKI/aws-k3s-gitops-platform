@@ -17,8 +17,8 @@ spec:
       valuesObject:
         # Updated by the podinfo CI pipeline on every build (see TarikAZIKI/podinfo).
         image:
-          repository: ghcr.io/stefanprodan/podinfo
-          tag: 6.15.0
+          repository: ghcr.io/tarikaziki/podinfo
+          tag: sha-ea494f4
         replicaCount: 2
         ingress:
           enabled: true
